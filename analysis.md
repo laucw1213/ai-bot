@@ -12,6 +12,7 @@
  |--findEntryIds.gs
  |--LICENSE
  |--findQuestions.gs
+ |--hi.py
  |--finddoc.gs
  |--createSheel.gs
  |--config.gs
@@ -1604,6 +1605,11 @@ function findQuestions() {
     throw error;
   }
 }```
+
+### ./hi.py
+```
+print
+hihihihi```
 
 ### ./finddoc.gs
 ```

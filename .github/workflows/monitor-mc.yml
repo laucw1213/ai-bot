@@ -2,8 +2,10 @@ name: AI Doc Analysis
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Check every 5 minutes
-  workflow_dispatch:
+    - cron: '* * * * *'    # Every minute (but might still be delayed)
+  repository_dispatch:      # For potential webhook triggers
+    types: [check_super_interview]
+  workflow_dispatch:        # For manual trigger
 
 jobs:
   analyze:
@@ -12,23 +14,43 @@ jobs:
     permissions:
       contents: write
     
+    # Add concurrency to prevent overlapping runs
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    
     steps:
       - name: Checkout ai-bot repository
         uses: actions/checkout@v4
         with:
           repository: 'laucw1213/ai-bot'
           path: 'ai-bot'
+          fetch-depth: 0  # Fetch full history for better commit tracking
+
+      - name: Debug Environment
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "GitHub workspace: $GITHUB_WORKSPACE"
 
       - name: Get latest commit from super-interview
         id: super_interview
         run: |
+          # Add debugging output
+          echo "Fetching latest commit from super-interview..."
+          
           LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/super-interview/commits/main" | jq -r .sha)
+          echo "Latest commit from API: $LATEST_COMMIT"
           echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
           
+          echo "Checking for last_commit.txt..."
           if [ -f "ai-bot/last_commit.txt" ]; then
             LAST_COMMIT=$(cat ai-bot/last_commit.txt)
+            echo "Found last_commit.txt with commit: $LAST_COMMIT"
           else
             LAST_COMMIT=""
+            echo "No last_commit.txt found, using empty string"
           fi
           echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
 
@@ -38,10 +60,16 @@ jobs:
           LATEST_COMMIT="${{ steps.super_interview.outputs.latest_commit }}"
           LAST_COMMIT="${{ steps.super_interview.outputs.last_commit }}"
           
+          echo "Comparing commits:"
+          echo "Latest commit: $LATEST_COMMIT"
+          echo "Last processed commit: $LAST_COMMIT"
+          
           if [ "$LATEST_COMMIT" != "$LAST_COMMIT" ]; then
             echo "needs_analysis=true" >> $GITHUB_OUTPUT
+            echo "📝 New commit detected, will run analysis"
           else
             echo "needs_analysis=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No new commits, skipping analysis"
           fi
 
       - name: Checkout super-interview repository
@@ -66,15 +94,24 @@ jobs:
       - name: Analyze super-interview repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
+          echo "Starting repository analysis..."
           cd super-interview
+          
+          # Create analysis file with timestamp
           echo "# Super Interview Repository Analysis" > ../ai-bot/analysis.md
+          echo "Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> ../ai-bot/analysis.md
           echo "" >> ../ai-bot/analysis.md
+          
           echo "## Repository Structure" >> ../ai-bot/analysis.md
+          echo "\`\`\`" >> ../ai-bot/analysis.md
           find . -type f -not -path "*/\.*" | sed -e "s/[^-][^\/]*\// |  /g" -e "s/|  \([^ ]\)/|--\1/" >> ../ai-bot/analysis.md
+          echo "\`\`\`" >> ../ai-bot/analysis.md
           echo "" >> ../ai-bot/analysis.md
+          
           echo "## File Contents" >> ../ai-bot/analysis.md
-          for file in $(find . -type f -not -path "*/\.*"); do
+          for file in $(find . -type f -not -path "*/\.*" -not -path "*/node_modules/*"); do
             if [[ -f "$file" ]]; then
+              echo "Processing file: $file"
               echo "### $file" >> ../ai-bot/analysis.md
               echo "\`\`\`" >> ../ai-bot/analysis.md
               cat "$file" >> ../ai-bot/analysis.md
@@ -82,6 +119,7 @@ jobs:
               echo "" >> ../ai-bot/analysis.md
             fi
           done
+          echo "Repository analysis complete."
 
       - name: Process with LLM
         if: steps.check_analysis.outputs.needs_analysis == 'true'
@@ -89,24 +127,44 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           cd ai-bot
+          echo "Starting LLM processing..."
           if [ -z "$GEMINI_API_KEY" ]; then
-            echo "Error: GEMINI_API_KEY is not set"
+            echo "❌ Error: GEMINI_API_KEY is not set"
             exit 1
           fi
           python process_llm.py
+          echo "LLM processing complete."
 
       - name: Save latest commit hash
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
           cd ai-bot
+          echo "Saving latest commit hash..."
           echo "${{ steps.super_interview.outputs.latest_commit }}" > last_commit.txt
+          echo "Saved commit hash: $(cat last_commit.txt)"
 
       - name: Commit and push changes to ai-bot
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
           cd ai-bot
+          echo "Configuring git..."
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          echo "Adding files to git..."
           git add analysis_*.md analysis.md last_commit.txt
+          
+          echo "Committing changes..."
           git commit -m "Update analysis from super-interview commit ${{ steps.super_interview.outputs.latest_commit }}" || echo "No changes to commit"
+          
+          echo "Pushing changes..."
           git push || echo "No changes to push"
+          
+          echo "Git operations complete."
+
+      - name: Summary
+        run: |
+          echo "### Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Latest commit: ${{ steps.super_interview.outputs.latest_commit }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Last processed commit: ${{ steps.super_interview.outputs.last_commit }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Analysis needed: ${{ steps.check_analysis.outputs.needs_analysis }}" >> $GITHUB_STEP_SUMMARY

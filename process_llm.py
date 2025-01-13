@@ -4,46 +4,47 @@ from pathlib import Path
 from datetime import datetime
 
 def process_with_llm():
-    # 确认 API 密钥存在
+    # Check for API key
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
         raise ValueError("Missing GEMINI_API_KEY environment variable")
 
-    # 配置 Gemini
+    # Configure Gemini
     genai.configure(api_key=api_key)
-    
-    # 使用 gemini-2.0-flash-exp 模型
     model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
     try:
-        # 读取 repomix 分析结果
+        # Read analysis file
+        print("Reading analysis.md...")
         with open('analysis.md', 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # 准备提示词
-        prompt = f"""Parse this markdown document and create a user guide. Please pay attention to:
-        1. Main functions
-        2. Usage steps
-        3. Configuration instructions
-        4. Notes and tips
+        # Prepare prompt
+        prompt = """Analyze the contents of this repository and create a user guide. Focus:
+        1. Main functions and uses
+        2. Code Structure
+        3. Installation and usage
+        4. Important Features
+        5. Notes
 
-        Please use clear, concise language and target ordinary users.
+        Please write in plain language, targeting end users.
+        Organize the analysis into a structured markdown format.
 
-        文档内容：
+        Warehouse contents:
         {content}
         """
 
-        # 生成回答
-        response = model.generate_content(prompt)
+        print("Generating content with Gemini...")
+        response = model.generate_content(prompt.format(content=content))
         result = response.text
 
-        # 生成带时间戳的文件名
+        # Generate timestamped filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"analysis_{timestamp}.md"
         
-        # 保存结果
+        print(f"Saving result to {filename}...")
         Path(filename).write_text(result, encoding='utf-8')
-        print(f"Generated analysis saved to {filename}")
+        print("Processing complete!")
 
     except Exception as e:
         print(f"Error processing content: {str(e)}")

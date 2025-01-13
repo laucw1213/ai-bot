@@ -1608,8 +1608,7 @@ function findQuestions() {
 
 ### ./hi.py
 ```
-print
-hihihihi```
+print("test")```
 
 ### ./finddoc.gs
 ```

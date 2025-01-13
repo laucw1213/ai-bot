@@ -21,13 +21,13 @@ def process_with_llm():
             content = f.read()
 
         # 准备提示词
-        prompt = f"""分析这个 markdown 文档，创建一个用户指南。请重点关注：
-        1. 主要功能说明
-        2. 使用步骤
-        3. 配置说明
-        4. 注意事项
+        prompt = f"""Parse this markdown document and create a user guide. Please pay attention to:
+        1. Main functions
+        2. Usage steps
+        3. Configuration instructions
+        4. Notes and tips
 
-        请使用清晰、简洁的语言，面向普通用户。
+        Please use clear, concise language and target ordinary users.
 
         文档内容：
         {content}

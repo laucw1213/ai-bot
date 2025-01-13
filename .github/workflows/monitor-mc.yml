@@ -1,0 +1,79 @@
+name: Monitor MC Repository
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # 每30分钟检查一次
+  workflow_dispatch:    # 允许手动触发
+
+jobs:
+  check-and-analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Get latest MC commit
+        id: mc-commit
+        run: |
+          MC_COMMIT=$(curl -s "https://api.github.com/repos/owner/MC/commits/main" | jq -r .sha)
+          echo "MC_COMMIT=$MC_COMMIT" >> $GITHUB_ENV
+
+      - name: Checkout test repository
+        uses: actions/checkout@v4
+
+      - name: Check if new commit
+        id: check
+        run: |
+          if [ -f "last_commit.txt" ]; then
+            LAST_COMMIT=$(cat last_commit.txt)
+          else
+            LAST_COMMIT=""
+          fi
+          
+          if [ "${{ env.MC_COMMIT }}" != "$LAST_COMMIT" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout MC repository
+        if: steps.check.outputs.has_changes == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: 'owner/MC'  # 替换为实际的 MC 仓库
+          path: 'MC'
+
+      - name: Setup Python
+        if: steps.check.outputs.has_changes == 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install repomix google-generativeai
+
+      - name: Run Repomix
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          cd MC
+          repomix analyze . --format markdown > ../analysis.md
+
+      - name: Process with LLM
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python process_llm.py
+          echo "${{ env.MC_COMMIT }}" > last_commit.txt
+
+      - name: Commit and push changes
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add analysis_*.md last_commit.txt
+          git commit -m "Update analysis and last commit"
+          git push

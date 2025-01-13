@@ -19,6 +19,12 @@ jobs:
           repository: 'laucw1213/super-interview'
           path: 'super-interview'
 
+      - name: Checkout ai-bot repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'laucw1213/ai-bot'
+          path: 'ai-bot'
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -38,23 +44,24 @@ jobs:
       - name: Run Repomix
         run: |
           cd super-interview
-          repomix > analysis.md
+          repomix > ../ai-bot/analysis.md
 
       - name: Process with LLM
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          cd ai-bot
           if [ -z "$GEMINI_API_KEY" ]; then
             echo "Error: GEMINI_API_KEY is not set"
             exit 1
           fi
           python process_llm.py
 
-      - name: Commit and push changes
+      - name: Commit and push changes to ai-bot
         run: |
-          cd super-interview
+          cd ai-bot
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add analysis_*.md
-          git commit -m "Update AI analysis" || echo "No changes to commit"
+          git add analysis_*.md analysis.md
+          git commit -m "Update analysis from super-interview" || echo "No changes to commit"
           git push || echo "No changes to push"

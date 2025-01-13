@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Repomix
         run: |
-          repomix analyze . -f md > analysis.md
+          repomix > analysis.md
 
       - name: Process with LLM
         env:

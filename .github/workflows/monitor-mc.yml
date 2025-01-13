@@ -13,7 +13,7 @@ jobs:
       contents: write
     
     steps:
-      - name: Checkout super-interview repository
+      - name: Checkout both repositories
         uses: actions/checkout@v4
         with:
           repository: 'laucw1213/super-interview'
@@ -41,10 +41,24 @@ jobs:
           pip install google-generativeai
           npm install -g repomix
 
-      - name: Run Repomix
+      - name: Analyze super-interview repository
         run: |
           cd super-interview
-          repomix > ../ai-bot/analysis.md
+          echo "# Super Interview Repository Analysis" > ../ai-bot/analysis.md
+          echo "" >> ../ai-bot/analysis.md
+          echo "## Repository Structure" >> ../ai-bot/analysis.md
+          find . -type f -not -path "*/\.*" | sed -e "s/[^-][^\/]*\// |  /g" -e "s/|  \([^ ]\)/|--\1/" >> ../ai-bot/analysis.md
+          echo "" >> ../ai-bot/analysis.md
+          echo "## File Contents" >> ../ai-bot/analysis.md
+          for file in $(find . -type f -not -path "*/\.*"); do
+            if [[ -f "$file" ]]; then
+              echo "### $file" >> ../ai-bot/analysis.md
+              echo "\`\`\`" >> ../ai-bot/analysis.md
+              cat "$file" >> ../ai-bot/analysis.md
+              echo "\`\`\`" >> ../ai-bot/analysis.md
+              echo "" >> ../ai-bot/analysis.md
+            fi
+          done
 
       - name: Process with LLM
         env:

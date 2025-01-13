@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '* * * * *'    # Every minute (but might still be delayed)
   repository_dispatch:      # For potential webhook triggers
-    types: [check_super_interview]
+    types: [super_interview_update]
   workflow_dispatch:        # For manual trigger
 
 jobs:

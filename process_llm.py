@@ -20,17 +20,17 @@ def process_with_llm():
             content = f.read()
 
         # Prepare prompt
-        prompt = """Analyze the contents of this repository and create a user guide. Focus:
-        1. Main functions and uses
-        2. Code Structure
-        3. Installation and usage
-        4. Important Features
-        5. Notes
+        prompt = """Create a simple guide that ONLY explains how to use this tool. Focus on:
+        1. Step-by-step instructions for using the tool
+        2. What inputs the user needs to provide
+        3. What outputs they will get
+        4. Any specific actions they need to take
 
-        Please write in plain language, targeting end users.
-        Organize the analysis into a structured markdown format.
+        Write in very simple, direct language.
+        Only include practical usage steps.
+        No technical details, setup, or background information.
 
-        Warehouse contents:
+        Repository contents:
         {content}
         """
 

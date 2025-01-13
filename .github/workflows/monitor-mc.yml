@@ -2,8 +2,8 @@ name: AI Doc Analysis
 
 on:
   push:
-    branches: [ main ]  # 当 main 分支有推送时触发
-  workflow_dispatch:    # 允许手动触发
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -23,7 +23,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install repomix google-generativeai
+          pip install google-generativeai
+          npm install -g repomix  # Using npm to install repomix globally
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Run Repomix
         run: |
@@ -40,5 +46,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add analysis_*.md
-          git commit -m "Update AI analysis"
-          git push
+          git commit -m "Update AI analysis" || echo "No changes to commit"
+          git push || echo "No changes to push"

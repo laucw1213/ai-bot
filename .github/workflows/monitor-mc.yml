@@ -8,6 +8,7 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    environment: GEMINI_API_KEY
     permissions:
       contents: write
     
@@ -39,6 +40,10 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "Error: GEMINI_API_KEY is not set"
+            exit 1
+          fi
           python process_llm.py
           
       - name: Commit and push changes

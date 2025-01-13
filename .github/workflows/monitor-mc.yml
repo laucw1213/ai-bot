@@ -13,8 +13,11 @@ jobs:
       contents: write
     
     steps:
-      - name: Checkout repository
+      - name: Checkout super-interview repository
         uses: actions/checkout@v4
+        with:
+          repository: 'laucw1213/super-interview'
+          path: 'super-interview'
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -34,6 +37,7 @@ jobs:
 
       - name: Run Repomix
         run: |
+          cd super-interview
           repomix > analysis.md
 
       - name: Process with LLM
@@ -45,9 +49,10 @@ jobs:
             exit 1
           fi
           python process_llm.py
-          
+
       - name: Commit and push changes
         run: |
+          cd super-interview
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add analysis_*.md

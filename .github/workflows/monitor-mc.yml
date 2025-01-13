@@ -20,20 +20,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-generativeai
-          npm install -g repomix  # Using npm to install repomix globally
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-generativeai
+          npm install -g repomix
+
       - name: Run Repomix
         run: |
-          repomix analyze . --format markdown > analysis.md
+          repomix analyze . -f md > analysis.md
 
       - name: Process with LLM
         env:

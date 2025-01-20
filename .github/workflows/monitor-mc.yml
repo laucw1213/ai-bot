@@ -38,9 +38,9 @@ jobs:
         id: mctest
         run: |
           # Add debugging output
-          echo "Fetching latest commit from super-interview..."
+          echo "Fetching latest commit from mctest..."
           
-          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/super-interview/commits/main" | jq -r .sha)
+          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/mctest/commits/main" | jq -r .sha)
           echo "Latest commit from API: $LATEST_COMMIT"
           echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
           
@@ -72,12 +72,12 @@ jobs:
             echo "ℹ️ No new commits, skipping analysis"
           fi
 
-      - name: Checkout super-interview repository
+      - name: Checkout mctest repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         uses: actions/checkout@v4
         with:
-          repository: 'laucw1213/super-interview'
-          path: 'super-interview'
+          repository: 'laucw1213/mctest'
+          path: 'mctest'
 
       - name: Setup Python
         if: steps.check_analysis.outputs.needs_analysis == 'true'
@@ -91,14 +91,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install google-generativeai
 
-      - name: Analyze super-interview repository
+      - name: Analyze mctest repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
           echo "Starting repository analysis..."
-          cd super-interview
+          cd mctest
           
           # Create analysis file with timestamp
-          echo "# Super Interview Repository Analysis" > ../ai-bot/analysis.md
+          echo "# MCTest Repository Analysis" > ../ai-bot/analysis.md
           echo "Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> ../ai-bot/analysis.md
           echo "" >> ../ai-bot/analysis.md
           

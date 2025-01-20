@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '* * * * *'    # Every minute (but might still be delayed)
   repository_dispatch:      # For potential webhook triggers
-    types: [mctest_update]
+types: [check_mctest]
   workflow_dispatch:        # For manual trigger
 
 jobs:
@@ -38,9 +38,9 @@ jobs:
         id: mctest
         run: |
           # Add debugging output
-          echo "Fetching latest commit from mctest..."
+          echo "Fetching latest commit from super-interview..."
           
-          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/mctest/commits/main" | jq -r .sha)
+          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/super-interview/commits/main" | jq -r .sha)
           echo "Latest commit from API: $LATEST_COMMIT"
           echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
           
@@ -72,12 +72,12 @@ jobs:
             echo "ℹ️ No new commits, skipping analysis"
           fi
 
-      - name: Checkout mctest repository
+      - name: Checkout super-interview repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         uses: actions/checkout@v4
         with:
-          repository: 'https://github.com/laucw1213/mctest.git'
-          path: 'mctest'
+          repository: 'laucw1213/super-interview'
+          path: 'super-interview'
 
       - name: Setup Python
         if: steps.check_analysis.outputs.needs_analysis == 'true'
@@ -91,11 +91,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install google-generativeai
 
-      - name: Analyze mctest repository
+      - name: Analyze super-interview repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
           echo "Starting repository analysis..."
-          cd mctest
+          cd super-interview
           
           # Create analysis file with timestamp
           echo "# Super Interview Repository Analysis" > ../ai-bot/analysis.md

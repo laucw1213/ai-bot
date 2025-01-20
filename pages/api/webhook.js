@@ -30,7 +30,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            event_type: 'super_interview_update',
+            event_type: 'mctest_update',
             client_payload: {
               repository: req.body.repository?.full_name || 'unknown',
               commit: req.body.after || 'unknown'
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ 
         message: 'Success',
         event: eventType,
-        triggered: 'super_interview_update'
+        triggered: 'mctest_update'
       });
   
     } catch (error) {

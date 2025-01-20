@@ -76,7 +76,7 @@ jobs:
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         uses: actions/checkout@v4
         with:
-          repository: 'laucw1213/mctest'
+          repository: 'https://github.com/laucw1213/mctest.git'
           path: 'mctest'
 
       - name: Setup Python

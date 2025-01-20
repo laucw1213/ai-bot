@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '* * * * *'    # Every minute (but might still be delayed)
   repository_dispatch:      # For potential webhook triggers
-    types: [super_interview_update]
+    types: [mctest_update]
   workflow_dispatch:        # For manual trigger
 
 jobs:
@@ -34,13 +34,13 @@ jobs:
           ls -la
           echo "GitHub workspace: $GITHUB_WORKSPACE"
 
-      - name: Get latest commit from super-interview
-        id: super_interview
+      - name: Get latest commit from mctest
+        id: mctest
         run: |
           # Add debugging output
-          echo "Fetching latest commit from super-interview..."
+          echo "Fetching latest commit from mctest..."
           
-          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/super-interview/commits/main" | jq -r .sha)
+          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/laucw1213/mctest/commits/main" | jq -r .sha)
           echo "Latest commit from API: $LATEST_COMMIT"
           echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
           
@@ -57,8 +57,8 @@ jobs:
       - name: Check if analysis needed
         id: check_analysis
         run: |
-          LATEST_COMMIT="${{ steps.super_interview.outputs.latest_commit }}"
-          LAST_COMMIT="${{ steps.super_interview.outputs.last_commit }}"
+          LATEST_COMMIT="${{ steps.mctest.outputs.latest_commit }}"
+          LAST_COMMIT="${{ steps.mctest.outputs.last_commit }}"
           
           echo "Comparing commits:"
           echo "Latest commit: $LATEST_COMMIT"
@@ -72,12 +72,12 @@ jobs:
             echo "ℹ️ No new commits, skipping analysis"
           fi
 
-      - name: Checkout super-interview repository
+      - name: Checkout mctest repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         uses: actions/checkout@v4
         with:
-          repository: 'laucw1213/super-interview'
-          path: 'super-interview'
+          repository: 'laucw1213/mctest'
+          path: 'mctest'
 
       - name: Setup Python
         if: steps.check_analysis.outputs.needs_analysis == 'true'
@@ -91,11 +91,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install google-generativeai
 
-      - name: Analyze super-interview repository
+      - name: Analyze mctest repository
         if: steps.check_analysis.outputs.needs_analysis == 'true'
         run: |
           echo "Starting repository analysis..."
-          cd super-interview
+          cd mctest
           
           # Create analysis file with timestamp
           echo "# Super Interview Repository Analysis" > ../ai-bot/analysis.md
@@ -140,7 +140,7 @@ jobs:
         run: |
           cd ai-bot
           echo "Saving latest commit hash..."
-          echo "${{ steps.super_interview.outputs.latest_commit }}" > last_commit.txt
+          echo "${{ steps.mctest.outputs.latest_commit }}" > last_commit.txt
           echo "Saved commit hash: $(cat last_commit.txt)"
 
       - name: Commit and push changes to ai-bot
@@ -155,7 +155,7 @@ jobs:
           git add analysis_*.md analysis.md last_commit.txt
           
           echo "Committing changes..."
-          git commit -m "Update analysis from super-interview commit ${{ steps.super_interview.outputs.latest_commit }}" || echo "No changes to commit"
+          git commit -m "Update analysis from mctest commit ${{ steps.mctest.outputs.latest_commit }}" || echo "No changes to commit"
           
           echo "Pushing changes..."
           git push || echo "No changes to push"
@@ -165,6 +165,6 @@ jobs:
       - name: Summary
         run: |
           echo "### Workflow Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Latest commit: ${{ steps.super_interview.outputs.latest_commit }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Last processed commit: ${{ steps.super_interview.outputs.last_commit }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Latest commit: ${{ steps.mctest.outputs.latest_commit }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Last processed commit: ${{ steps.mctest.outputs.last_commit }}" >> $GITHUB_STEP_SUMMARY
           echo "- Analysis needed: ${{ steps.check_analysis.outputs.needs_analysis }}" >> $GITHUB_STEP_SUMMARY
